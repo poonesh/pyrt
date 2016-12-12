@@ -32,10 +32,7 @@ class Triangle():
 		normal_plane_vec = ab_vector.clone().cross(ac_vector)
 
 		# check if the ray is perpendicular to the normal vector of the plane
-		if ray_dir >= 1 + 1e-3:  # check if ray_dir is normalized or not
-			ray_dir.normalize() 
-		plane_normal_ray_vec_dot = ray_dir.dot(normal_plane_vec)
-		
+		plane_normal_ray_vec_dot = ray.ray_dir.dot(normal_plane_vec)
 		if plane_normal_ray_vec_dot == 0.0:
 			return False
 		

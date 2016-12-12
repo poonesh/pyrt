@@ -47,9 +47,7 @@ class Sphere():
 		"""
 		ray = Ray(ray_origin, ray_dir)
 
-		if ray_dir >= 1 + 1e-3:  # check if ray_dir is normalized or not
-			ray_dir.normalize() 
-		a = ray_dir.dot(ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
+		a = ray.ray_dir.dot(ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
 		vector_O_C = self.position.sub(ray_origin) # the vector between origin of the ray and the center of the circle
 		
 		scaled_ray_direction = ray.get_point(2) # 2*D ()
