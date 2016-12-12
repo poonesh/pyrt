@@ -1,6 +1,11 @@
 
 
 class Vector():
+	"""
+	this class creates a vector object which obviously has a direction (x, y, z) and magnitude.
+	the methods also provide the operations on a vector including adding, subtraction, dot and cross product as well as magnitude 
+	and normalization. Through clone method, the vector object can be copied. 
+	"""
 
 	def __init__(self, x=0, y=0, z=0):
 		self.x = x
@@ -43,6 +48,10 @@ class Vector():
 		self.y = self.y / magnitude
 		self.z = self.z / magnitude
 		return self
+
+
+	def clone(self):
+		return Vector(self.x, self.y, self.z) 
 
 
 	

@@ -1,25 +1,25 @@
 import unittest
 from Triangle import Triangle 
+from Vector import Vector
 
 
 class TestTriangle(unittest.TestCase):
 
 	def test_get_intersect(self):
+		
 		T = Triangle()
-		result = T.get_intersect([0.0, 0.0, 0.0], [1.0, 1.0, -0.5])
+		result = T.get_intersect(Vector(0.0, 0.0, 0.0), Vector(1.0, 1.0, -0.5))
 		self.assertEqual(result, False)
 
-		result = T.get_intersect([0.0, 0.0, 0.0], [-1.0, -1.0, 1.0])
-		self.assertEqual(result, "the plane is behind the ray")
+		result = T.get_intersect(Vector(0.0, 0.0, 0.0), Vector(-1.0, -1.0, 1.0))
+		self.assertEqual(result, False)
 
-		result = T.get_intersect([2.0, 0.0, 0.0], [-2.0, 2.0, 0.0])
-		self.assertEqual(result, "the ray is parallel to the plane")
+		result = T.get_intersect(Vector(2.0, 0.0, 0.0), Vector(-2.0, 2.0, 0.0))
+		self.assertEqual(result, False)
 
-		T = Triangle([-1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0])
-		result = T.get_intersect([0.0, 0.0, 0.0], [-1.0, -1.0, 1.0])
+		T = Triangle(Vector(1.0, 0.0, 0.0), Vector(0.0, 0.0, 1.0), Vector(0.0, 1.0, 0.0))
+		result = T.get_intersect(Vector(0.0, 0.0, 0.0), Vector(1.0, 1.0, 1.0))
 		self.assertEqual(result, True)
-
-
 
 
 

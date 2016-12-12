@@ -1,4 +1,6 @@
 
+from Vector import Vector
+from Ray import Ray
 
 
 def solve_quadratic(a, b, c):
@@ -11,21 +13,51 @@ def solve_quadratic(a, b, c):
 
 class Sphere():
 
-	def __init__(self, position=[0.0, 0.0, 0.0], radius = 1.0, color="red"):
+	def __init__(self, position= Vector(0, 0, 0), radius = 1.0, color="red"):
 		self.position = position
 		self.radius = radius
 		self.color = color
 
 	
-	def get_intersect(self, ray_origin, ray_dir):
-		a = sum([i*j for i, j in zip(ray_dir, ray_dir)])
-
-		vector_O_C = [i-j for i, j in zip(ray_origin, self.position)]  # the vector between origin of the ray and the center of the circle
-		scaled_ray_direction = [2*i for i in ray_dir]
-		b = sum([i*j for i, j in zip(scaled_ray_direction, vector_O_C)])
+	def get_intersect(self, ray_origin= Vector(0, 0, 0), ray_dir = Vector(1, 1, 1)):
 		
-		mag_vector_O_C = (vector_O_C[0]**2 + vector_O_C[1]**2 + vector_O_C[2]**2)**0.5
-		c = mag_vector_O_C**2 - (self.radius)**2
+		"""
+		this method returns the point where a Ray and a sphere intersects.
+		if the Ray does not intersect with the sphere the function returns -1
+
+		following are the calculation steps:
+
+		(1) the equation of a sphere x^2 + y^2 + z^2 = R^2
+		
+		(2) the equation of a ray P = O + tD 
+			(O is the origin of the ray and D is the normalized vector which corresponds to the ray direction and P 
+			is a point at the end of the ray based on the scaling factor t) 
+		
+		(3) if x, y, and z in equation 1 are the coordinates of point P in equation 2: P^2 - R^2 = 0
+			(when the sphere is not centered at the origin, equation 2 is equal to  |P - C|^2 - R^2 = 0 (equation 3) 
+		
+		(4) equation 3 can be rewritten as |O + tD - C|^2 - R^2 = 0 (equation 4), where C is the center of the sphere in space
+		
+		(5) equation 4 is a quadratic function where a = 1 (dot product of a normalized vector with itself) and 
+			b = 2D(O-C) and c = |O-C|^2 - R^2.
+		(6) delta = b^2 - 4*a*c   t1, t2 = (-b +- sqrt(delta)/2a
+			if delta > 0, the ray intersects the sphere in two points (t1 and t2)
+			if delta = 0, the ray intersects the sphere in one point only (t1=t2)
+			if delta < 0, the ray does not intersect with the sphere.    
+		"""
+		ray = Ray(ray_origin, ray_dir)
+
+		if ray_dir >= 1 + 1e-3:  # check if ray_dir is normalized or not
+			ray_dir.normalize() 
+		a = ray_dir.dot(ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
+		vector_O_C = self.position.sub(ray_origin) # the vector between origin of the ray and the center of the circle
+		
+		scaled_ray_direction = ray.get_point(2) # 2*D ()
+		b = scaled_ray_direction.dot(vector_O_C)
+		
+		mag_vector_O_C = vector_O_C.mag()
+
+		c = (mag_vector_O_C)**2 - (self.radius)**2
 		
 		t1, t2 = solve_quadratic(a, b, c)
 		if t1>0 and t2>0:
