@@ -76,6 +76,15 @@ class TestVector(unittest.TestCase):
         self.assertEqual(v.z, 0)
 
 
+    def test_constant_multiply(self):
+        v = Vector(0, 5, 0)
+        result_vector = v.constant_multiply(3)
+        self.assertEqual(result_vector.x, 0)
+        self.assertEqual(result_vector.y, 15)
+        self.assertEqual(result_vector.z, 0)
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,10 +5,11 @@ from Ray import Ray
 
 class Triangle():
 
-	def __init__(self, a = Vector(1.0, 0.0, 0.0), b = Vector(0.0, 0.0, 1.0), c = Vector(0.0, 1.0, 0.0), color="red"):
+	def __init__(self, a = Vector(1.0, 0.0, 0.0), b = Vector(0.0, 0.0, 1.0), c = Vector(0.0, 1.0, 0.0), color=(255, 0, 0)):
 		self.a = a
 		self.b = b
 		self.c = c
+		self.color = color
 
 
 	def get_intersect(self, ray_origin = Vector(0.0, 0.0, 0.0), ray_dir = Vector(1.0, 1.0, 1.0)):
@@ -41,8 +42,8 @@ class Triangle():
 			nominator = float(vec_a_ray_origin.dot(normal_plane_vec))
 			t = nominator/(plane_normal_ray_vec_dot)
 
-		# check if the intersection point is inside the triangle 	
-			scaled_ray_dir = ray.get_point(t)
+		# check if the intersection point is inside the triangle
+			scaled_ray_dir = ray.ray_dir.constant_multiply(t) 	
 			intersect_point = ray_origin.clone().add(scaled_ray_dir)
 			
 			edge_ab = self.a.clone().sub(self.b)
@@ -61,7 +62,7 @@ class Triangle():
 			   (normal_plane_vec.dot(cross_product_edge_bc_intersect_point_b))> 0 and \
 			   (normal_plane_vec.dot(cross_product_edge_ca_intersect_point_c))> 0:
 
-			   return True
+			   return t
 			return False
 
 

@@ -12,6 +12,7 @@ class Vector():
 		self.y = y
 		self.z = z
 
+
 	def mag(self):
 		return ((self.x)**2 + (self.y)**2 + (self.z)**2 )**(0.5)
 		
@@ -43,7 +44,7 @@ class Vector():
 
 
 	def normalize(self):
-		magnitude = self.mag()
+		magnitude = float(self.mag())
 		self.x = self.x / magnitude
 		self.y = self.y / magnitude
 		self.z = self.z / magnitude
@@ -51,7 +52,14 @@ class Vector():
 
 
 	def clone(self):
-		return Vector(self.x, self.y, self.z) 
+		return Vector(self.x, self.y, self.z)
+
+
+	def constant_multiply(self, cons):
+		self.x = self.x*cons
+		self.y = self.y*cons
+		self.z = self.z*cons
+		return self
 
 
 	

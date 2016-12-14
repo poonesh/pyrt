@@ -5,15 +5,17 @@ from Ray import Ray
 
 def solve_quadratic(a, b, c):
 	delta = b**2 - 4*a*c
-	x1 = (-b + (delta**0.5))*(1./(2*a))
-	x2 = (-b - (delta**0.5))*(1./(2*a))
+	if delta < 0:
+		return None
+	x1 = (-b + (delta**0.5))/float(2*a)
+	x2 = (-b - (delta**0.5))/float(2*a)
 
 	return x1, x2
 
 
 class Sphere():
 
-	def __init__(self, position= Vector(0, 0, 0), radius = 1.0, color="red"):
+	def __init__(self, position= Vector(0, 0, 0), radius = 1.0, color=(0, 0, 255)):
 		self.position = position
 		self.radius = radius
 		self.color = color
@@ -47,17 +49,22 @@ class Sphere():
 		"""
 		ray = Ray(ray_origin, ray_dir)
 
-		a = ray.ray_dir.dot(ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
-		vector_O_C = self.position.sub(ray_origin) # the vector between origin of the ray and the center of the circle
+		a = ray.ray_dir.dot(ray.ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
+		vector_O_C = self.position.clone().sub(ray.origin) # the vector between origin of the ray and the center of the circle
 		
-		scaled_ray_direction = ray.get_point(2) # 2*D ()
+		scaled_ray_direction = ray.ray_dir.clone().constant_multiply(2)  # 2*D 
 		b = scaled_ray_direction.dot(vector_O_C)
 		
 		mag_vector_O_C = vector_O_C.mag()
 
 		c = (mag_vector_O_C)**2 - (self.radius)**2
 		
+		if solve_quadratic(a, b, c) is None:
+			return False
+
 		t1, t2 = solve_quadratic(a, b, c)
+
+
 		if t1>0 and t2>0:
 			if t1<t2:
 				return t1
@@ -67,7 +74,7 @@ class Sphere():
 			return t1
 
 		else:
-			return -1
+			return False
 
 
 
