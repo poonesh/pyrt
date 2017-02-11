@@ -3,9 +3,6 @@
 from PIL import Image
 from Vector import Vector 
 
-
-
-
 class Viewport():
 
 	def __init__(self, O=Vector(0, 0, 0), U=Vector(5, 0, 0), V=Vector(0, 5, 0)):

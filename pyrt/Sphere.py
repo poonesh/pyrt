@@ -15,17 +15,26 @@ def solve_quadratic(a, b, c):
 
 class Sphere():
 
-	def __init__(self, position= Vector(0, 0, 0), radius = 1.0, color=(0, 0, 255)):
+	def __init__(self, position= Vector(0, 0, 0), radius = 1.0, color=Vector(0, 0, 255), ka = 0, kd = 0):
 		self.position = position
 		self.radius = radius
 		self.color = color
+		self.ka = ka  # the surface's coefficient of ambient reflection  (0<= ka <= 1)
+		self.kd = kd  # the surface's coefficient of diffuse reflection  (0<= ka <= 1)
+
+
+	def surface_normal(self, point = Vector(1, 1, 1), ray_origin=Vector(0, 0, 0), ray_dir=Vector(0, 0, 0)):
+
+		center_point_vector = point.clone().sub(self.position.clone())
+		return center_point_vector.clone().normalize()
+
 
 	
 	def get_intersect(self, ray_origin= Vector(0, 0, 0), ray_dir = Vector(1, 1, 1)):
 		
 		"""
 		this method returns the point where a Ray and a sphere intersects.
-		if the Ray does not intersect with the sphere the function returns -1
+		if the Ray does not intersect with the sphere the function returns False
 
 		following are the calculation steps:
 
@@ -33,7 +42,8 @@ class Sphere():
 		
 		(2) the equation of a ray P = O + tD 
 			(O is the origin of the ray and D is the normalized vector which corresponds to the ray direction and P 
-			is a point at the end of the ray based on the scaling factor t) 
+			is a point at the end of the ray based on the scaling factor t. t is in fact the parametric distance from the origin of the ray 
+			to the point of interest along the ray) 
 		
 		(3) if x, y, and z in equation 1 are the coordinates of point P in equation 2: P^2 - R^2 = 0
 			(when the sphere is not centered at the origin, equation 2 is equal to  |P - C|^2 - R^2 = 0 (equation 3) 
@@ -49,8 +59,8 @@ class Sphere():
 		"""
 		ray = Ray(ray_origin, ray_dir)
 
-		a = ray.ray_dir.dot(ray.ray_dir)  # a = D^2 = 1 (D is a normalized vector for ray direction)
-		vector_O_C = self.position.clone().sub(ray.origin) # the vector between origin of the ray and the center of the circle
+		a = ray.ray_dir.dot(ray.ray_dir)  #a = D^2 = 1 (D is a normalized vector for ray direction)
+		vector_O_C = ray.origin.clone().sub(self.position.clone()) #the vector between origin of the ray and the center of the circle
 		
 		scaled_ray_direction = ray.ray_dir.clone().constant_multiply(2)  # 2*D 
 		b = scaled_ray_direction.dot(vector_O_C)
@@ -70,7 +80,7 @@ class Sphere():
 				return t1
 			return t2
 
-		elif t1==t2==0:
+		elif t1==t2:
 			return t1
 
 		else:

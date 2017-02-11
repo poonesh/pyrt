@@ -1,17 +1,29 @@
 
+
 from Vector import Vector
 from Ray import Ray
+import sys
 
 
 class Triangle():
 
-	def __init__(self, a = Vector(1.0, 0.0, 0.0), b = Vector(0.0, 0.0, 1.0), c = Vector(0.0, 1.0, 0.0), color=(255, 0, 0)):
+	def __init__(self, a= Vector(1.0, 0.0, 0.0), b= Vector(0.0, 0.0, 1.0), c= Vector(0.0, 1.0, 0.0), color=Vector(255, 0, 0), ka = 0, kd = 0):
 		self.a = a
 		self.b = b
 		self.c = c
 		self.color = color
+		self.ka = ka  #the surface's coefficient of ambient reflection  (0<= ka <= 1)
+		self.kd = kd  #the surface's coefficient of diffuse reflection  (0<= kd <= 1)
+		ab_vector = self.b.clone().sub(self.a.clone())
+		ac_vector = self.c.clone().sub(self.a.clone())
+		self.normal = (ab_vector.clone().cross(ac_vector))
+		
+	
+	
+	def surface_normal(self, point=Vector(0, 0, 0), ray_origin=Vector(0, 0, 0), ray_dir=Vector(0, 0, 0)):
+		return self.normal.clone()
 
-
+	
 	def get_intersect(self, ray_origin = Vector(0.0, 0.0, 0.0), ray_dir = Vector(1.0, 1.0, 1.0)):
 
 		"""
@@ -26,56 +38,46 @@ class Triangle():
 			or not. (at this point, it can also be checked if the plane is behind the ray, this is optional though for this project)
 		(4) the last step is to check if the ray intersects the plane inside the triangle.
 		"""
-		ray = Ray(ray_origin, ray_dir)
-		# check if the ray intersect the plane where the triangle is placed
-		ab_vector = self.a.clone().sub(self.b)
-		ac_vector = self.a.clone().sub(self.c)
-		normal_plane_vec = ab_vector.clone().cross(ac_vector)
 
-		# check if the ray is perpendicular to the normal vector of the plane
-		plane_normal_ray_vec_dot = ray.ray_dir.dot(normal_plane_vec)
-		if plane_normal_ray_vec_dot == 0.0:
-			return False
+		ray = Ray(ray_origin, ray_dir.clone().normalize())
 		
-		else:
-			vec_a_ray_origin = self.a.clone().sub(ray_origin)
-			nominator = float(vec_a_ray_origin.dot(normal_plane_vec))
-			t = nominator/(plane_normal_ray_vec_dot)
 
-		# check if the intersection point is inside the triangle
-			scaled_ray_dir = ray.ray_dir.constant_multiply(t) 	
-			intersect_point = ray_origin.clone().add(scaled_ray_dir)
-			
-			edge_ab = self.a.clone().sub(self.b)
-			edge_bc = self.b.clone().sub(self.c)
-			edge_ca = self.c.clone().sub(self.a)
+		normal = self.normal.clone()
+		plane_normal_ray_vec_dot = ray.ray_dir.clone().dot(normal)  #l(ray_dir).n (normal_plane)
+		
+		#check if the ray is perpendicular to the normal vector of the plane
+		if plane_normal_ray_vec_dot == 0.0: #if ray and normal vector to the plane are perpendicular 
+			return False
 
-			intersect_point_a = self.a.clone().sub(intersect_point)
-			intersect_point_b = self.b.clone().sub(intersect_point)
-			intersect_point_c = self.c.clone().sub(intersect_point)
+		plane_normal_ray_vec_dot = ray.ray_dir.clone().dot(normal) 
+		
 
-			cross_product_edge_ab_intersect_point_a = edge_ab.clone().cross(intersect_point_a)
-			cross_product_edge_bc_intersect_point_b = edge_bc.clone().cross(intersect_point_b)
-			cross_product_edge_ca_intersect_point_c = edge_ca.clone().cross(intersect_point_c)
+		#D is the distance of the plane from origin (0, 0, 0) which can be calculated as following 
+		D = normal.clone().dot(self.a.clone())
+		nominator = float(float(ray_origin.clone().dot(normal.clone()) - D))
+		t = float(-nominator/(plane_normal_ray_vec_dot))
 
-			if (normal_plane_vec.dot(cross_product_edge_ab_intersect_point_a))> 0 and \
-			   (normal_plane_vec.dot(cross_product_edge_bc_intersect_point_b))> 0 and \
-			   (normal_plane_vec.dot(cross_product_edge_ca_intersect_point_c))> 0:
-
-			   return t
+		if t < 0.0:
 			return False
 
 
+		#check if the intersection point is inside the triangle
+		scaled_ray_dir = ray.ray_dir.clone().constant_multiply(t) 	
+		intersect_point = ray_origin.clone().add(scaled_ray_dir)
+		
+		intersect_point_a = self.a.clone().sub(intersect_point.clone())
+		intersect_point_b = self.b.clone().sub(intersect_point.clone())
+		intersect_point_c = self.c.clone().sub(intersect_point.clone())
 
+		v1 = intersect_point_a.clone().cross(intersect_point_b.clone())
+		v2 = intersect_point_b.clone().cross(intersect_point_c.clone())
+		v3 = intersect_point_c.clone().cross(intersect_point_a.clone())
 
-
-
-
-
-
-
-
-
-
+		if (v1.dot(v2)) > 0 and \
+		   (v2.dot(v3)) > 0 and \
+		   (v3.dot(v1)) > 0:
+		
+		    return t
+		return False
 
 
