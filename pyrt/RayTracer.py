@@ -11,18 +11,19 @@ import sys
 
 
 
-class MainFile():
+class RayTracer():
 	def __init__(self, lightpos=Vector(0 ,0 , 0), camerapos=Vector(0, 0, 0), O=Vector(0, 0, 0), U=Vector(0, 0, 0), V=Vector(0, 0, 0)):
-		print 'asdf'
 		self.lightpos = PointLight(position=lightpos)
 		self.camerapos = camerapos
 		self.viewportpos = Viewport(O=O, U=U, V=V)
 		self.list_of_primitives = []
-		self.screen2D = Screen2D(50, 50)
+		self.screen2D = Screen2D(100, 100)
 
 		# primitives 
 		sphere_1 = Sphere(position= Vector(4, 4, -6), radius= 1.0, color= Vector(255, 255, 224))  #gray
 		sphere_2 = Sphere(position= Vector(7, 2, -4), radius= 1.0, color= Vector(50, 205, 50))  #green
+		sphere_3 = Sphere(position= Vector(2, 2, -3), radius=1.5, color= Vector(255, 255, 255), material = "mirror") 
+		sphere_4 = Sphere(position= Vector(8, 2, -2), radius=0.5, color=Vector(0, 0, 0), material = "mirror") 
 		triangle_1 = Triangle(b= Vector(7, 2, -7), a= Vector(6, 5, -7), c= Vector(5, 2, -7), color= Vector(205, 92, 92))
 		triangle_2 = Triangle(a= Vector(4, 1, -5), b= Vector(5, 4, -5), c= Vector(6, 1, -5), color= Vector(72, 61, 139))
 
@@ -39,14 +40,16 @@ class MainFile():
 		triangle_left_1 = Triangle(a= Vector(1, 1, -8), b= Vector(1, 9, -8), c= Vector(1, 1, 0), color= Vector(255, 69, 0))
 		triangle_left_2 = Triangle(a= Vector(1, 1, 0), b= Vector(1, 9, -8), c= Vector(1, 9, 0), color= Vector(255, 69, 0))
 
-		triangle_bottom_1 = Triangle(a= Vector(1, 1, -8), b= Vector(9, 1, -8), c= Vector(1, 1, 0), color= Vector(70, 130, 180))
-		triangle_bottom_2 = Triangle(a= Vector(1, 1, 0), b= Vector(9, 1, 0), c= Vector(9, 1, -8), color= Vector(70, 130, 180))
+		triangle_bottom_1 = Triangle(a= Vector(1, 1, -8), b= Vector(9, 1, -8), c= Vector(1, 1, 0), color= Vector(70, 130, 180), material="mirror")
+		triangle_bottom_2 = Triangle(a= Vector(1, 1, 0), b= Vector(9, 1, 0), c= Vector(9, 1, -8), color= Vector(70, 130, 180), material="mirror")
 
 
 		# appending the objects in the scene to a list (list_of_primtives) 
 		self.list_of_primtives = []
 		self.list_of_primtives.append(sphere_1)
 		self.list_of_primtives.append(sphere_2)
+		self.list_of_primtives.append(sphere_3)
+		self.list_of_primtives.append(sphere_4)
 		self.list_of_primtives.append(triangle_1)
 		self.list_of_primtives.append(triangle_2)
 
@@ -145,24 +148,64 @@ class MainFile():
 					surface_color = obj.color
 					intersect_point = ray.origin.clone().add(ray.ray_dir.clone().constant_multiply(t)) #finding the intersect point using the minimum distance t and the ray origin 
 					normal_vector = obj.surface_normal(point=intersect_point, ray_origin=self.camerapos.clone(), ray_dir=ray_dir.clone()) #finding the normal vector at intersect point for the object 
-			
-					# calling is_in_shadow function to check if the intersect point is in shadow or not
-					is_intersected = self.is_in_shadow(intersect_point, obj)
-			
-					if is_intersected: 
-						self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)			
+					
+					# (1) I changed it form here
+					if obj.material == "mirror":
+						ref_ray_dir = ray.ray_dir.constant_multiply(-1).clone().reflected_ray_dir(normal_vector.clone())
+						ray = Ray(origin=intersect_point.clone(), ray_dir=ref_ray_dir.clone())
+						intersect_scale_dic_test = {}
+
+						for obj in self.list_of_primtives:
+							t_test = obj.get_intersect(ray.origin.clone(), ray.ray_dir.clone())
+							if t_test:
+								intersect_scale_dic_test[obj] = t_test
+						if len(intersect_scale_dic_test) != 0:
+							t_test_min = min(intersect_scale_dic_test.itervalues())
+							obj = (min(intersect_scale_dic_test, key=intersect_scale_dic_test.get))	
+							surface_color = obj.color
+							intersect_point = ray.origin.clone().add(ray.ray_dir.clone().constant_multiply(t_test_min)) #finding the intersect point using the minimum distance t and the ray origin 
+							normal_vector = obj.surface_normal(point=intersect_point, ray_origin=ray.origin.clone(), ray_dir=ray.ray_dir.clone()) #finding the normal vector at intersect point for the object 
+							# calling is_in_shadow function to check if the intersect point is in shadow or not
+							is_intersected = self.is_in_shadow(intersect_point, obj)
+					
+							if is_intersected: 
+								self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)			
+							else:
+							# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
+								final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
+						
+								""" assign the color to the screen2D pixels """
+								self.screen2D.pixels[i,size[1] - j - 1] = (final_color[0], final_color[1], final_color[2])
+
+						else:
+							self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)
+
+							
 					else:
-					# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
-						final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
+						# calling is_in_shadow function to check if the intersect point is in shadow or not
+						is_intersected = self.is_in_shadow(intersect_point, obj)
 				
-						""" assign the color to the screen2D pixels """
-						self.screen2D.pixels[i,size[1] - j - 1] = (final_color[0], final_color[1], final_color[2])
+						if is_intersected: 
+							self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)			
+						else:
+						# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
+							final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
+					
+							""" assign the color to the screen2D pixels """
+							self.screen2D.pixels[i,size[1] - j - 1] = (final_color[0], final_color[1], final_color[2])
 
 				else:
 					self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)
-		# self.screen2D.image.show()
-		print 'HERE'
-		self.screen2D.image.save("/Users/Pooneh/projects/applications/student_app_flask/venv/static/ray_pic.png")
+		self.screen2D.image.show()
+	
+
+	
+ray_tracer = RayTracer(lightpos=Vector(2, 6.5, -2), camerapos=Vector(7.5, 5, 10), O=Vector(0, 0, 0), U=Vector(10, 0, 0), V=Vector(0, 10, 0)) 
+ray_tracer.render_image()
+
+
+
+
 
 
 
