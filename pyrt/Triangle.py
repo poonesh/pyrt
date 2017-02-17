@@ -7,7 +7,7 @@ import sys
 
 class Triangle():
 
-	def __init__(self, a= Vector(1.0, 0.0, 0.0), b= Vector(0.0, 0.0, 1.0), c= Vector(0.0, 1.0, 0.0), color=Vector(255, 0, 0), ka = 0, kd = 0):
+	def __init__(self, a= Vector(1.0, 0.0, 0.0), b= Vector(0.0, 0.0, 1.0), c= Vector(0.0, 1.0, 0.0), color=Vector(255, 0, 0), ka = 0, kd = 0, material = "normal"):
 		self.a = a
 		self.b = b
 		self.c = c
@@ -17,13 +17,11 @@ class Triangle():
 		ab_vector = self.b.clone().sub(self.a.clone())
 		ac_vector = self.c.clone().sub(self.a.clone())
 		self.normal = (ab_vector.clone().cross(ac_vector))
+		self.material = material
 		
-	
-	
 	def surface_normal(self, point=Vector(0, 0, 0), ray_origin=Vector(0, 0, 0), ray_dir=Vector(0, 0, 0)):
 		return self.normal.clone()
 
-	
 	def get_intersect(self, ray_origin = Vector(0.0, 0.0, 0.0), ray_dir = Vector(1.0, 1.0, 1.0)):
 
 		"""
@@ -40,8 +38,6 @@ class Triangle():
 		"""
 
 		ray = Ray(ray_origin, ray_dir.clone().normalize())
-		
-
 		normal = self.normal.clone()
 		plane_normal_ray_vec_dot = ray.ray_dir.clone().dot(normal)  #l(ray_dir).n (normal_plane)
 		
@@ -50,7 +46,6 @@ class Triangle():
 			return False
 
 		plane_normal_ray_vec_dot = ray.ray_dir.clone().dot(normal) 
-		
 
 		#D is the distance of the plane from origin (0, 0, 0) which can be calculated as following 
 		D = normal.clone().dot(self.a.clone())
@@ -59,7 +54,6 @@ class Triangle():
 
 		if t < 0.0:
 			return False
-
 
 		#check if the intersection point is inside the triangle
 		scaled_ray_dir = ray.ray_dir.clone().constant_multiply(t) 	
