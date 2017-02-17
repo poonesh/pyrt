@@ -84,6 +84,15 @@ class TestVector(unittest.TestCase):
         self.assertEqual(result_vector.z, 0)
 
 
+    def test_calculate_reflected_vector(self):
+        normal_vector = Vector(0, 0, 1)
+        R_I = Vector(-1, 0, 1)
+        R_r = R_I.reflected_ray(normal_vector)
+
+        self.assertEqual(R_r.x, 0.7071067811865476)
+        self.assertEqual(R_r.y, 0.0)
+        self.assertEqual(R_r.z, 0.7071067811865474)
+       
 
 
 if __name__ == "__main__":
