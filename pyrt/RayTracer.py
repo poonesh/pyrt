@@ -18,6 +18,8 @@ class RayTracer():
 		self.viewportpos = Viewport(O=O, U=U, V=V)
 		self.list_of_primitives = []
 		self.screen2D = Screen2D(100, 100)
+		self.size = self.screen2D.image.size
+		self.list_of_primitives = []
 
 		# primitives 
 		sphere_1 = Sphere(position= Vector(4, 4, -6), radius= 1.0, color= Vector(255, 255, 224))  #gray
@@ -45,25 +47,24 @@ class RayTracer():
 
 
 		# appending the objects in the scene to a list (list_of_primtives) 
-		self.list_of_primtives = []
-		self.list_of_primtives.append(sphere_1)
-		self.list_of_primtives.append(sphere_2)
-		self.list_of_primtives.append(sphere_3)
-		self.list_of_primtives.append(sphere_4)
-		self.list_of_primtives.append(triangle_1)
-		self.list_of_primtives.append(triangle_2)
+		self.list_of_primitives.append(sphere_1)
+		self.list_of_primitives.append(sphere_2)
+		self.list_of_primitives.append(sphere_3)
+		self.list_of_primitives.append(sphere_4)
+		self.list_of_primitives.append(triangle_1)
+		self.list_of_primitives.append(triangle_2)
 
 		# appending cornell box componenet to the list_of_primitives  
-		self.list_of_primtives.append(triangle_back_1)
-		self.list_of_primtives.append(triangle_back_2)
-		self.list_of_primtives.append(triangle_right_1)
-		self.list_of_primtives.append(triangle_right_2)
-		self.list_of_primtives.append(triangle_top_1)
-		self.list_of_primtives.append(triangle_top_2)
-		self.list_of_primtives.append(triangle_left_1)
-		self.list_of_primtives.append(triangle_left_2)
-		self.list_of_primtives.append(triangle_bottom_1)
-		self.list_of_primtives.append(triangle_bottom_2)
+		self.list_of_primitives.append(triangle_back_1)
+		self.list_of_primitives.append(triangle_back_2)
+		self.list_of_primitives.append(triangle_right_1)
+		self.list_of_primitives.append(triangle_right_2)
+		self.list_of_primitives.append(triangle_top_1)
+		self.list_of_primitives.append(triangle_top_2)
+		self.list_of_primitives.append(triangle_left_1)
+		self.list_of_primitives.append(triangle_left_2)
+		self.list_of_primitives.append(triangle_bottom_1)
+		self.list_of_primitives.append(triangle_bottom_2)
 
 		#calculate ambient illumination for the point_light
 		self.ambient = self.lightpos.ambient_illumination()
@@ -86,7 +87,7 @@ class RayTracer():
 		light_intersect_ray = Ray(origin = intersect_point.clone(), ray_dir= light_intersect_vector.normalize())
 		#2. determine if ray intersects any OTHER primitives
 		is_intersected = False
-		for test_obj in self.list_of_primtives:
+		for test_obj in self.list_of_primitives:
 			if obj != test_obj:
 				t = test_obj.get_intersect(light_intersect_ray.origin.clone(), light_intersect_ray.ray_dir.clone())
 				if t and t < t_ray_light:
@@ -125,89 +126,58 @@ class RayTracer():
 		final_color = (final_color_R, final_color_G, final_color_B)
 		return final_color
 
+
+	def scene_intersect(self, ray):
+		intersect_scale_dic = {}
+		num_of_bounces = 0
+		for obj in self.list_of_primitives:
+			t = obj.get_intersect(ray.origin.clone(), ray.ray_dir.clone()) 
+			if t:
+				intersect_scale_dic[obj] = t
+		if len(intersect_scale_dic) != 0:
+			t_min = min(intersect_scale_dic.itervalues())
+			intersected_obj = (min(intersect_scale_dic, key=intersect_scale_dic.get))
+			surface_color = intersected_obj.color
+			intersect_point = ray.origin.clone().add(ray.ray_dir.clone().constant_multiply(t_min))
+			normal_vector = intersected_obj.surface_normal(point=intersect_point.clone(), ray_origin=self.camerapos.clone(), ray_dir=ray.ray_dir.clone())
+
+			if intersected_obj.material == "mirror" and num_of_bounces <= 100:
+				num_of_bounces += 1
+				def_ray_dir = ray.ray_dir.constant_multiply(-1).clone().reflected_ray_dir(normal_vector.clone())
+				intersect_point = intersect_point.clone().add(def_ray_dir.normalize().clone().constant_multiply(0.001))
+				def_ray = Ray(origin=intersect_point.clone(), ray_dir=def_ray_dir.clone())
+				return self.scene_intersect(def_ray)
+
+			else:
+				# calling is_in_shadow function to check if the intersect point is in shadow or not
+				is_intersected = self.is_in_shadow(intersect_point.clone(), intersected_obj)
+				if is_intersected: 
+					return (0, 0, 0) 		
+				else:
+				# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
+					final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
+					return final_color		
+		else:
+			return (0, 0, 0)
+
+	
 	def render_image(self):
 		""" converting the position of pixels in a screen 2D to the correlate pixel positions in the viewport """
-		size = self.screen2D.image.size
-		for i in range(size[0]):
-			for j in range(size[1]):
-
+		for i in range(self.size[0]):
+			for j in range(self.size[1]):
 				percentage_pos = self.screen2D.pixel_position_percentage(i, j) #finding pixel position percentage in the screen2D
 				view_port_pixel = self.viewportpos.percentage_to_point(percentage_pos[0], percentage_pos[1]) #converting pixel position percentage in the screen2D to the correlate pixel position in the viewport 
 				ray_dir = view_port_pixel.sub(self.camerapos.clone())
+				ray = Ray(self.camerapos.clone(), ray_dir.clone()) #defining a ray	
+				color = self.scene_intersect(ray)
+				""" assign the color to the screen2D pixels """
+				self.screen2D.pixels[i,self.size[1] - j - 1] = color
 
-				ray = Ray(self.camerapos.clone(), ray_dir.clone()) #defining a ray 
-				intersect_scale_dic = {} #defining a dictionary to map the ray_origin intersect_point distance (t) of the objects in the scene  
-
-				for obj in self.list_of_primtives:
-					t1 = obj.get_intersect(ray.origin.clone(), ray.ray_dir.clone()) #checking if there is a ray-object (objects in the scene) intersect 
-					if t1:
-						intersect_scale_dic[obj] = t1
-				if len(intersect_scale_dic) != 0:
-					t = min(intersect_scale_dic.itervalues()) #finding the minimum ray_origin intersect point distance by checking intersect_point_dictionary
-					obj = (min(intersect_scale_dic, key=intersect_scale_dic.get)) #finding the object(key) corresponding to minimum value (the distance between ray_origin and the intersect point) in the dictionary 
-					surface_color = obj.color
-					intersect_point = ray.origin.clone().add(ray.ray_dir.clone().constant_multiply(t)) #finding the intersect point using the minimum distance t and the ray origin 
-					normal_vector = obj.surface_normal(point=intersect_point, ray_origin=self.camerapos.clone(), ray_dir=ray_dir.clone()) #finding the normal vector at intersect point for the object 
-					
-					# (1) I changed it form here
-					if obj.material == "mirror":
-						ref_ray_dir = ray.ray_dir.constant_multiply(-1).clone().reflected_ray_dir(normal_vector.clone())
-						ray = Ray(origin=intersect_point.clone(), ray_dir=ref_ray_dir.clone())
-						intersect_scale_dic_test = {}
-
-						for obj in self.list_of_primtives:
-							t_test = obj.get_intersect(ray.origin.clone(), ray.ray_dir.clone())
-							if t_test:
-								intersect_scale_dic_test[obj] = t_test
-						if len(intersect_scale_dic_test) != 0:
-							t_test_min = min(intersect_scale_dic_test.itervalues())
-							obj = (min(intersect_scale_dic_test, key=intersect_scale_dic_test.get))	
-							surface_color = obj.color
-							intersect_point = ray.origin.clone().add(ray.ray_dir.clone().constant_multiply(t_test_min)) #finding the intersect point using the minimum distance t and the ray origin 
-							normal_vector = obj.surface_normal(point=intersect_point, ray_origin=ray.origin.clone(), ray_dir=ray.ray_dir.clone()) #finding the normal vector at intersect point for the object 
-							# calling is_in_shadow function to check if the intersect point is in shadow or not
-							is_intersected = self.is_in_shadow(intersect_point, obj)
-					
-							if is_intersected: 
-								self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)			
-							else:
-							# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
-								final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
-						
-								""" assign the color to the screen2D pixels """
-								self.screen2D.pixels[i,size[1] - j - 1] = (final_color[0], final_color[1], final_color[2])
-
-						else:
-							self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)
-
-							
-					else:
-						# calling is_in_shadow function to check if the intersect point is in shadow or not
-						is_intersected = self.is_in_shadow(intersect_point, obj)
-				
-						if is_intersected: 
-							self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)			
-						else:
-						# calling illumination function if the intersect_point light_position Ray does not intersects with any other primitives 
-							final_color = self.illumination(ray, normal_vector, intersect_point, surface_color)
-					
-							""" assign the color to the screen2D pixels """
-							self.screen2D.pixels[i,size[1] - j - 1] = (final_color[0], final_color[1], final_color[2])
-
-				else:
-					self.screen2D.pixels[i,size[1] - j - 1] = (0, 0, 0)
 		self.screen2D.image.show()
-	
 
-	
+		
 ray_tracer = RayTracer(lightpos=Vector(2, 6.5, -2), camerapos=Vector(7.5, 5, 10), O=Vector(0, 0, 0), U=Vector(10, 0, 0), V=Vector(0, 10, 0)) 
 ray_tracer.render_image()
-
-
-
-
-
-
 
 
 
